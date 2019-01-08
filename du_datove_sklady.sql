@@ -127,7 +127,7 @@ create table customers_dim(
     customer_city varchar2(255),
     customer_country varchar2(255),
     customer_postal_code varchar2(255),
-    constraint customer_dim_pk primary key (customer_id)
+    constraint customer_dim_pk primary key (customer_key)
 );
 
 -- SCD2
@@ -144,7 +144,7 @@ create table currency_dim(
 -- Fact table
 create table sales_fact(
     -- dimensions fk
-    date_key number not null,
+    date_key date not null,
     time_key number not null, 
     product_key number not null,
     cashier_key number not null,
@@ -160,15 +160,15 @@ create table sales_fact(
     unit_costs number,
     unit_discount number,
     unit_price_after_discount number,
-    special_discount number
+    special_discount number,
     currency varchar2(5),
 
     -- derivated facts
-    overall_standart_price number as (quantity_sold * unit_standart_price) * special_discount,
-    overall_discount number as (quantity_sold * unit_discount) * special_discount,
-    overall_costs_after_discount number as (quantity_sold * unit_price_after_discount) * special_discount,
-    overall_costs number as (quantity_sold * unit_costs) * special_discount,
-    profit number as (overall_standart_price - overall_costs),
+    overall_standart_price number as ((quantity_sold * unit_standart_price) * special_discount),
+    overall_discount number as ((quantity_sold * unit_discount) * special_discount),
+    overall_costs_after_discount number as ((quantity_sold * unit_price_after_discount) * special_discount),
+    overall_costs number as ((quantity_sold * unit_costs) * special_discount),
+    profit number as (((quantity_sold * unit_standart_price) * special_discount) - ((quantity_sold * unit_costs) * special_discount)),
 
     CONSTRAINT fk_date_dim
     FOREIGN KEY (date_key)
@@ -210,7 +210,7 @@ create table sales_fact(
 create table payment_fact(
     -- dimensions fks
     payment_method_key number,
-    date_key number, 
+    date_key date, 
     time_key number, 
     transaction_code_key number, 
 
@@ -220,8 +220,8 @@ create table payment_fact(
     currency varchar2(5),
 
     CONSTRAINT fk_payment_method_dim
-    FOREIGN KEY (payment_method_dim)
-    REFERENCES payment_method_dim(payment_method_dim),
+    FOREIGN KEY (payment_method_key)
+    REFERENCES payment_method_dim(payment_method_key),
 
     CONSTRAINT fk_date_dim
     FOREIGN KEY (date_key)
@@ -239,11 +239,6 @@ create table payment_fact(
 
 -- Fact table
 create table points_fact(
-    -- dimensions fks
-    
-
-
-    -- facts
     used_points number,
     gained_points number
 );
