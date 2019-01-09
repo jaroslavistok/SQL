@@ -127,6 +127,7 @@ create table customers_dim(
     customer_city varchar2(255),
     customer_country varchar2(255),
     customer_postal_code varchar2(255),
+    -- age group
     constraint customer_dim_pk primary key (customer_key)
 );
 
@@ -151,6 +152,7 @@ create table sales_fact(
     store_key number not null,  
     payment_method_key number not null,
     customer_key number not null,
+    currency_key number not null,
 
 
     -- facts
@@ -161,7 +163,6 @@ create table sales_fact(
     unit_discount number,
     unit_price_after_discount number,
     special_discount number,
-    currency varchar2(5),
 
     -- derivated facts
     overall_standart_price number as ((quantity_sold * unit_standart_price) * special_discount),
@@ -170,33 +171,38 @@ create table sales_fact(
     overall_costs number as ((quantity_sold * unit_costs) * special_discount),
     profit number as (((quantity_sold * unit_standart_price) * special_discount) - ((quantity_sold * unit_costs) * special_discount)),
 
-    CONSTRAINT fk_date_dim
+    CONSTRAINT fk_date_dim_sales_fact
     FOREIGN KEY (date_key)
     REFERENCES date_dim(date_key),
 
-    CONSTRAINT fk_time_dim
+    CONSTRAINT fk_time_dim_sales_fact
     FOREIGN KEY (time_key)
     REFERENCES time_dim(time_key),
 
-    CONSTRAINT fk_product_dim
+    CONSTRAINT fk_product_dim_sales_fact
     FOREIGN KEY (product_key)
     REFERENCES product_dim(product_key),
 
-    CONSTRAINT fk_cashier_dim
+    CONSTRAINT fk_cashier_dim_sales_fact
     FOREIGN KEY (cashier_key)
     REFERENCES cashier_dim(cashier_key),
 
-    CONSTRAINT fk_store_dim
+    CONSTRAINT fk_store_dim_sales_fact
     FOREIGN KEY (store_key)
     REFERENCES store_dim(store_key),
 
-    CONSTRAINT fk_payment_method_dim
+    CONSTRAINT fk_payment_method_dim_sales_fact
     FOREIGN KEY (payment_method_key)
     REFERENCES payment_method_dim(payment_method_key),
 
-    CONSTRAINT fk_customer_dim
+    CONSTRAINT fk_customer_dim_sales_fact
     FOREIGN KEY (customer_key)
-    REFERENCES customers_dim(customer_key)
+    REFERENCES customers_dim(customer_key),
+
+    CONSTRAINT fk_currency_dim_sales_fact
+    FOREIGN KEY (currency_key)
+    REFERENCES currency_dim(currency_key)
+
 
 );
 
@@ -209,37 +215,53 @@ create table sales_fact(
 -- Fact table
 create table payment_fact(
     -- dimensions fks
-    payment_method_key number,
-    date_key date, 
-    time_key number, 
-    transaction_code_key number, 
-
+    payment_method_key number not null,
+    date_key date not null,  
+    time_key number not null, 
+    transaction_code varchar2(255) not null, 
+    -- cashier_key ... ?
 
     -- facts
     payed_price number,
     currency varchar2(5),
 
-    CONSTRAINT fk_payment_method_dim
+    CONSTRAINT fk_payment_method_dim_payment_fact
     FOREIGN KEY (payment_method_key)
     REFERENCES payment_method_dim(payment_method_key),
-
-    CONSTRAINT fk_date_dim
+    
+    
+    CONSTRAINT fk_date_dim_payment_fact
     FOREIGN KEY (date_key)
     REFERENCES date_dim(date_key),
 
-    CONSTRAINT fk_time_dim
+    CONSTRAINT fk_time_dim_payment_fact
     FOREIGN KEY (time_key)
     REFERENCES time_dim(time_key),
     
-    CONSTRAINT fk_transaction_code_dim
-    FOREIGN KEY (transaction_code_key),
-    REFERENCES time_dim(transaction_code_key)
+    CONSTRAINT fk_transaction_code_dim_payment_fact
+    FOREIGN KEY (transaction_code)
+    REFERENCES transaction_code_dim(transaction_code)
 
 );
 
 -- Fact table
 create table points_fact(
+    -- customer dimension
+    -- date dimension
     used_points number,
     gained_points number
 );
 
+
+-- Selects
+-- 1.
+select sum(profit), sd.store_name 
+from sales_fact sf 
+inner join date_dim dd on sf.date_key = dd.date_key
+inner join store_dim sd on sf.store_key = sd.store_key
+where (date condition)
+order by sf.profit
+group by sf.store_key;
+
+
+-- 2.
