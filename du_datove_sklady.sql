@@ -16,6 +16,28 @@ create table date_dim(
     constraint date_dim_pk primary key (date_key)
 );
 
+insert into date_dim 
+(date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
+calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
+calendar_year, is_feast, week_ending_date) 
+values 
+(date '2019-01-11', 4, 11, 'Friday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13'),;
+
+
+insert into date_dim 
+(date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
+calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
+calendar_year, is_feast, week_ending_date) 
+values 
+(date '2019-01-13', 6, 13, 'Sunday', 1, 'January', 2, 31, date '2019-01-31', 2019, 1, date '2019-01-13');
+
+insert into date_dim 
+(date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
+calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
+calendar_year, is_feast, week_ending_date) 
+values 
+(date '2019-01-12', 4, 12, 'Saturday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13');
+
 create sequence time_key_seq start with 1;
 
 -- SCD1 (overwritte values in row)
@@ -26,6 +48,10 @@ create table time_dim(
     constraint time_dim_pk primary key (time_key)
 );
 
+insert into time_dim (minute, hour) values (30, 1);
+insert into time_dim (minute, hour) values (10, 6);
+insert into time_dim (minute, hour) values (11, 3);
+insert into time_dim (minute, hour) values (12, 4);
 
 create sequence product_key_seq 
 start with 1;
@@ -46,10 +72,19 @@ create table product_dim(
      -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
     constraint product_dim_pk primary key (product_key)
 );
+
+insert into product_dim (sku, product_name, brand_name, category, sub_category, package_type, product_weight)
+values ('sku1', 'iphone', 'apple', 'mobilny telefon', 'smartfon', 'box', 200);
+
+insert into product_dim (sku, product_name, brand_name, category, sub_category, package_type, product_weight)
+values ('sku2', 'mac', 'apple', 'notebooky', 'ultrabooky', 'box', 2000);
+
+insert into product_dim (sku, product_name, brand_name, category, sub_category, package_type, product_weight)
+values ('sku3', 'pracka', 'whirpool', 'elektrospotrebice', 'spotrebice do domacnosti', 'box', 200000);
 
 create sequence store_key_seq 
 start with 1;
@@ -72,10 +107,20 @@ create table store_dim(
     -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
     constraint store_dim_pk primary key (store_key)
 );
+
+insert into store_dim (store_dim_id, store_name, street, city, country, postal_number,area,store_type,opened)
+values (1, 'store1', 'street1', 'city1', 'country1', '92221', 10000, 'type1', date '2019-01-10');
+
+insert into store_dim (store_dim_id, store_name, street, city, country, postal_number,area,store_type,opened)
+values (2, 'store2', 'street2', 'city2', 'country2', '92222', 20000, 'type2', date '2019-01-1');
+
+insert into store_dim (store_dim_id, store_name, street, city, country, postal_number,area,store_type,opened)
+values (3, 'store3', 'street3', 'city3', 'country3', '92223', 30000, 'type3', date '2019-01-3');
+
 
 create sequence promotion_key_seq 
 start with 1;
@@ -96,11 +141,23 @@ create table promotion_dim(
      -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
 
     constraint promotion_dim_pk primary key (promotion_key)
 );
+
+insert into promotion_dim(promotion_id, promotion_name, promotion_start_date, 
+    promotion_end_date, advert_type, coupon_type, promotion_medium)
+    values (1, 'advert1', date '2019-01-01', date '2019-01-06', 'brand', 'coupon1', 'television');
+    
+insert into promotion_dim(promotion_id, promotion_name, promotion_start_date, 
+    promotion_end_date, advert_type, coupon_type, promotion_medium)
+    values (2, 'advert2', date '2018-12-10', date '2018-12-30', 'product', 'coupon2', 'newspapers');
+
+insert into promotion_dim(promotion_id, promotion_name, promotion_start_date, 
+    promotion_end_date, advert_type, coupon_type, promotion_medium)
+    values (3, 'advert3', date '2019-01-07', date '2019-01-10', 'product', 'coupon3', 'bilboard');
 
 create sequence cashier_key_seq 
 start with 1;
@@ -117,10 +174,20 @@ create table cashier_dim(
     -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
     constraint cashier_dim_pk primary key (cashier_key)
 );
+
+insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
+values (1, 'janko', 'hrasko');
+
+insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
+values (1, 'marienka', 'hraskova');
+
+insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
+values (1, 'jozko', 'mrkvicka');
+
 
 create sequence payment_method_key_seq 
 start with 1;
@@ -135,10 +202,17 @@ create table payment_method_dim(
      -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
     constraint payment_method_pk primary key (payment_method_key)
 );
+
+insert into payment_method_dim (method)
+values ('card');
+
+insert into payment_method_dim (method)
+values ('cash');
+
 
 -- Degenerated dimension
 create table transaction_code_dim(
@@ -162,6 +236,18 @@ create table customers_dim(
     constraint customer_dim_pk primary key (customer_key)
 );
 
+
+insert into customers_dim (customer_forename,customer_surname,customer_street,
+    customer_city, customer_country, customer_postal_code)
+    values ('forename1', 'surname1', 'street1', 'city1', 'country1', '11111');
+insert into customers_dim (customer_forename,customer_surname,customer_street,
+    customer_city, customer_country, customer_postal_code)
+    values ('forename2', 'surname2', 'street2', 'city2', 'country2', '2222');
+insert into customers_dim (customer_forename,customer_surname,customer_street,
+    customer_city, customer_country, customer_postal_code)
+    values ('forename3', 'surname3', 'street3', 'city3', 'country3', '3333');
+
+
 -- SCD2
 create sequence currency_key_seq 
 start with 1;
@@ -173,10 +259,19 @@ create table currency_dim(
     -- scd2 specific culumns
     valid_from date DEFAULT trunc(sysdate), 
     valid_to date DEFAULT date '9999-12-31', 
-    current char(1) DEFAULT 'Y',
+    valid char(1) DEFAULT 'Y',
 
     constraint currency_dim_pk primary key (currency_key)
 );
+
+insert into currency_dim (currency) 
+values ('sk');
+
+insert into currency_dim (currency) 
+values ('cz');
+
+insert into currency_dim (currency) 
+values ('huf');
 
 
 -- Fact table
@@ -266,7 +361,6 @@ create table payment_fact(
     FOREIGN KEY (payment_method_key)
     REFERENCES payment_method_dim(payment_method_key),
     
-    
     CONSTRAINT fk_date_dim_payment_fact
     FOREIGN KEY (date_key)
     REFERENCES date_dim(date_key),
@@ -283,21 +377,27 @@ create table payment_fact(
 
 -- Fact table
 create table points_fact(
-    -- customer dimension
-    -- date dimension
+    -- dimensions keys
+    customer_key number not null,
+    date_key date not null,
+
+    -- facts
     used_points number,
-    gained_points number
+    gained_points number,
+
+    -- constraints 
+    CONSTRAINT fk_customer_dim_points_fact
+    FOREIGN KEY (customer_key)
+    REFERENCES customers_dim(customer_key),
+
+    CONSTRAINT fk_date_dim_points_fact
+    FOREIGN KEY (date_key)
+    REFERENCES date_dim(date_key)
 );
 
 -- inserting data
 
-insert into payment_method_dim (method)
-          select payment_method_key_seq.nextval, trunc(sysdate) valid_from, date '2100-12-31' valid_to, 'Y' valid
-                 from channels_stage chs 
-                where exists (select null from channels ch 
-                               where chs.channel_id = ch.channel_id 
-                                 and chs.channel_class <> ch.channel_class)    -- porovnavame ci nastala zmena v SCD2 atributoch
-commit;
+
 
 
 
