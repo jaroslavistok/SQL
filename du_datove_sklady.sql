@@ -42,6 +42,12 @@ create table product_dim(
     sub_category varchar2(255),
     package_type varchar2(255),
     product_weight varchar2(255),
+
+     -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
     constraint product_dim_pk primary key (product_key)
 );
 
@@ -62,6 +68,12 @@ create table store_dim(
     area number,
     store_type varchar2(255),
     opened date,
+
+    -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
     constraint store_dim_pk primary key (store_key)
 );
 
@@ -80,6 +92,13 @@ create table promotion_dim(
     advert_type varchar2(255),
     coupon_type varchar2(255),
     promotion_medium varchar2(255),
+
+     -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
+
     constraint promotion_dim_pk primary key (promotion_key)
 );
 
@@ -94,6 +113,12 @@ create table cashier_dim(
     cashier_code varchar2(100),
     cashier_forename varchar2(100),
     cashier_surname varchar2(100),
+
+    -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
     constraint cashier_dim_pk primary key (cashier_key)
 );
 
@@ -106,6 +131,12 @@ create table payment_method_dim(
     payment_method_key number DEFAULT payment_method_key_seq.nextval NOT NULL,
 
     method varchar2(255),
+
+     -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
     constraint payment_method_pk primary key (payment_method_key)
 );
 
@@ -138,6 +169,12 @@ start with 1;
 create table currency_dim(
     currency_key number DEFAULT currency_key_seq.nextval NOT NULL,
     currency varchar2(5),
+
+    -- scd2 specific culumns
+    valid_from date DEFAULT trunc(sysdate), 
+    valid_to date DEFAULT date '9999-12-31', 
+    current char(1) DEFAULT 'Y',
+
     constraint currency_dim_pk primary key (currency_key)
 );
 
@@ -251,6 +288,18 @@ create table points_fact(
     used_points number,
     gained_points number
 );
+
+-- inserting data
+
+insert into payment_method_dim (method)
+          select payment_method_key_seq.nextval, trunc(sysdate) valid_from, date '2100-12-31' valid_to, 'Y' valid
+                 from channels_stage chs 
+                where exists (select null from channels ch 
+                               where chs.channel_id = ch.channel_id 
+                                 and chs.channel_class <> ch.channel_class)    -- porovnavame ci nastala zmena v SCD2 atributoch
+commit;
+
+
 
 
 -- Selects
