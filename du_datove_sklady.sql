@@ -13,30 +13,31 @@ create table date_dim(
     calendar_year number,
     is_feast smallint,
     week_ending_date date,
+    quartal smallint,
     constraint date_dim_pk primary key (date_key)
 );
 
 insert into date_dim 
 (date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
 calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
-calendar_year, is_feast, week_ending_date) 
+calendar_year, is_feast, week_ending_date, quartal) 
 values 
-(date '2019-01-11', 4, 11, 'Friday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13'),;
+(date '2019-01-11', 4, 11, 'Friday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13', 1);
 
 
 insert into date_dim 
 (date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
 calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
-calendar_year, is_feast, week_ending_date) 
+calendar_year, is_feast, week_ending_date, quartal) 
 values 
-(date '2019-01-13', 6, 13, 'Sunday', 1, 'January', 2, 31, date '2019-01-31', 2019, 1, date '2019-01-13');
+(date '2019-01-13', 6, 13, 'Sunday', 1, 'January', 2, 31, date '2019-01-31', 2019, 1, date '2019-01-13', 1);
 
 insert into date_dim 
 (date_key, day_number_in_week, day_number_in_month, day_name, calendar_month_number,
 calendar_month_name, calendar_week_number, days_in_calendar_month, end_of_calendar_month,
-calendar_year, is_feast, week_ending_date) 
+calendar_year, is_feast, week_ending_date, quartal) 
 values 
-(date '2019-01-12', 4, 12, 'Saturday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13');
+(date '2019-01-12', 4, 12, 'Saturday', 1, 'January', 2, 31, date '2019-01-31', 2019, 0, date '2019-01-13', 1);
 
 create sequence time_key_seq start with 1;
 
@@ -232,6 +233,7 @@ create table customers_dim(
     customer_city varchar2(255),
     customer_country varchar2(255),
     customer_postal_code varchar2(255),
+    
     -- age group
     constraint customer_dim_pk primary key (customer_key)
 );
@@ -275,6 +277,7 @@ values ('huf');
 
 
 -- Fact table
+-- Fact table
 create table sales_fact(
     -- dimensions fk
     date_key date not null,
@@ -285,6 +288,7 @@ create table sales_fact(
     payment_method_key number not null,
     customer_key number not null,
     currency_key number not null,
+    promotion_key number not null,
 
 
     -- facts
@@ -334,8 +338,10 @@ create table sales_fact(
     CONSTRAINT fk_currency_dim_sales_fact
     FOREIGN KEY (currency_key)
     REFERENCES currency_dim(currency_key)
-
-
+    
+    CONSTRAINT fk_promotion_dim_sales_fact
+    FOREIGN KEY (promotion_key)
+    REFERENCES promotion_dim(promotion_key)
 );
 
 
@@ -351,7 +357,7 @@ create table payment_fact(
     date_key date not null,  
     time_key number not null, 
     transaction_code varchar2(255) not null, 
-    -- cashier_key ... ?
+    cashier_key number not null,
 
     -- facts
     payed_price number,
@@ -371,8 +377,11 @@ create table payment_fact(
     
     CONSTRAINT fk_transaction_code_dim_payment_fact
     FOREIGN KEY (transaction_code)
-    REFERENCES transaction_code_dim(transaction_code)
-
+    REFERENCES transaction_code_dim(transaction_code),
+    
+    CONSTRAINT fk_cashier_dim_payment_fact
+    FOREIGN KEY (cashier_key)
+    REFERENCES cashier_dim(cashier_key)
 );
 
 -- Fact table
@@ -395,22 +404,93 @@ create table points_fact(
     REFERENCES date_dim(date_key)
 );
 
--- inserting data
-
-
-
-
-
 
 -- Selects
 -- 1.
-select sum(profit), sd.store_name 
+select sd.store_name store_name, sum(sf.profit) store_profit
 from sales_fact sf 
-inner join date_dim dd on sf.date_key = dd.date_key
 inner join store_dim sd on sf.store_key = sd.store_key
-where (date condition)
-order by sf.profit
-group by sf.store_key;
+where (sf.date_key between date '2019-01-01' and date '2019-01-31')
+group by store_name
+order by store_profit desc;
+
+-- 2
+select sum(sf.amount_sold) as sold_units, pd.product_name
+from sales_fact sf
+inner join product_dim pd on sf.product_key=pd.product_key
+group by pd.sku, sold_units
+order by sold_units;
 
 
--- 2.
+-- 3 
+select sum(sf.profit) as profit, pd.product_name
+from sales_fact sf 
+inner join product_dim pd on sf.product_key=pd.product_key
+inner join date_dim dd on sf.date_key=dd.date_key
+where dd.quartal = 1
+group by pd.sku
+order by profit
+
+-- 4
+select sum(sf.profit) as profit, pd.brand_name, sum(sf.overall_standart_price) overall_standart_price, sum(sf.overall_discount) discounts, sum(sf.overall_costs) costs
+from sales_fact sf 
+inner join product_dim pd on sf.product_key=pd.product_key
+group by pd.brand_name
+order by profit
+
+-- 5
+select sum(sf.profit) as profit, pd.promotion_name 
+from sales_fact sf
+inner join promotion_dim pd on sf.promotion_key=pd.promotion_key
+group by pd.promotion_name
+order by profit
+
+-- 6
+select sum(sf.profit) as profit, 
+from sales_fact sf
+inner join date_dim dd on sf.date_key=dd.date_key
+inner join time_dim td on sf.time_key=td.time_key
+where (dd.calendar_year = 2018) and 
+(td.hour=2) and 
+(dd.day_name='Sunday') and 
+(sf.store_key=1) and 
+(sf.brand_name='apple')
+group by ; 
+
+-- 7
+select cd.cashier_forename cashier, sum(sf.amount_sold)
+from sales_fact sf
+inner join cashier_dim cd on sf.cashier_key=cd.cashier_key
+group by cd.cashier_forename;
+
+-- 8
+select sum(sf.profit) profit
+from sales_fact sf
+inner join date_dim dd on sf.date_key=dd.date_key
+where dd.day_name='Sunday';
+
+
+--9 
+select sum(sf.profit) profit
+from sales_fact sf
+inner join currency_dim cd on sf.currency_key=cd.currency_key
+inner join date_dim dd on sf.date_key=dd.date_key
+where cd.currency='EUR' and dd.calendar_year='2019';
+
+-- 10
+select sum(sf.profit) profit
+from sales_fact sf
+inner join customers_dim cd on sf.customer_key=cd.customer_key
+where cd.currency='EUR' and dd.calendar_year='2019';
+
+-- 11 drill
+
+
+--12
+
+select sum(pf.payed_price) total_payed_price, pmd.method
+from payment_fact pf
+inner join payment_method_dim pmd on pf.payment_method_key=pmd.payment_method_key
+group by pmd.method
+
+--13
