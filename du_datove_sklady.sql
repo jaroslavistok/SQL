@@ -184,10 +184,10 @@ insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
 values (1, 'janko', 'hrasko');
 
 insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
-values (1, 'marienka', 'hraskova');
+values (2, 'marienka', 'hraskova');
 
 insert into cashier_dim(cashier_code, cashier_forename, cashier_surname)
-values (1, 'jozko', 'mrkvicka');
+values (3, 'jozko', 'mrkvicka');
 
 
 create sequence payment_method_key_seq 
@@ -220,6 +220,11 @@ create table transaction_code_dim(
     transaction_code varchar2(255),
     constraint transaction_code_dim_pk primary key (transaction_code)
 );
+
+insert into transaction_code_dim(transaction_code) values ('1');
+insert into transaction_code_dim(transaction_code) values ('2');
+insert into transaction_code_dim(transaction_code) values ('3');
+insert into transaction_code_dim(transaction_code) values ('4');
 
 create sequence customer_key_seq 
 start with 1;
@@ -337,17 +342,41 @@ create table sales_fact(
 
     CONSTRAINT fk_currency_dim_sales_fact
     FOREIGN KEY (currency_key)
-    REFERENCES currency_dim(currency_key)
+    REFERENCES currency_dim(currency_key),
     
     CONSTRAINT fk_promotion_dim_sales_fact
     FOREIGN KEY (promotion_key)
     REFERENCES promotion_dim(promotion_key)
 );
 
+insert into sales_fact
+(
+   date_key, time_key, product_key, cashier_key, store_key, payment_method_key, customer_key, currency_key, promotion_key,
+    quantity_sold, amount_sold, unit_standart_price, unit_costs, unit_discount, unit_price_after_discount, special_discount)
+values(date '2019-01-11', 1, 1,1, 1, 1, 1, 1, 1, 
+2, 0, 14, 12, 0.1, 11, 0.1);
+
+insert into sales_fact
+(
+   date_key, time_key, product_key, cashier_key, store_key, payment_method_key, customer_key, currency_key, promotion_key,
+    quantity_sold, amount_sold, unit_standart_price, unit_costs, unit_discount, unit_price_after_discount, special_discount)
+values(date '2019-01-11', 2, 2,2, 2, 2, 2, 2, 2, 
+5, 0, 211, 190, 0.2, 200, 0.1);
+
+
+insert into sales_fact
+(
+   date_key, time_key, product_key, cashier_key, store_key, payment_method_key, customer_key, currency_key, promotion_key,
+    quantity_sold, amount_sold, unit_standart_price, unit_costs, unit_discount, unit_price_after_discount, special_discount)
+values(date '2019-01-12', 3, 3,3, 3, 3, 3, 3, 3, 
+0, 10, 1000, 900, 0.3, 950, 0.2);
+
 
 -- list of dimensions
 -- date_dim, time_dim, product_dim, store_dim, promotion_dim, transaction_code_dim, customers_dim,
 -- currency_dim
+
+
 
 
 -- Fact table
@@ -384,6 +413,21 @@ create table payment_fact(
     REFERENCES cashier_dim(cashier_key)
 );
 
+select * from payment_method_dim;
+
+insert into payment_fact (payment_method_key, date_key, time_key, transaction_code, cashier_key, payed_price, currency)
+values (1, date '2019-01-12', 1, '1', 1
+, 1000, 'EUR');
+
+insert into payment_fact (payment_method_key, date_key, time_key, transaction_code, cashier_key, payed_price, currency)
+values (2, date '2019-01-13', 2, '2', 2
+, 2000, 'EUR');
+
+insert into payment_fact (payment_method_key, date_key, time_key, transaction_code, cashier_key, payed_price, currency)
+values (2, date '2019-01-11', 2, '2', 2
+, 33000, 'HUF');
+
+
 -- Fact table
 create table points_fact(
     -- dimensions keys
@@ -404,6 +448,20 @@ create table points_fact(
     REFERENCES date_dim(date_key)
 );
 
+insert into points_fact(customer_key, date_key, used_points, gained_points)
+values(1, date '2019-01-11', 12, 40);
+
+insert into points_fact(customer_key, date_key, used_points, gained_points)
+values(2, date '2019-01-12', 10, 60);
+
+insert into points_fact(customer_key, date_key, used_points, gained_points)
+values(3, date '2019-01-11', 60, 100);
+
+
+select * from sales_fact;
+
+
+
 
 -- Selects
 -- 1.
@@ -415,10 +473,10 @@ group by store_name
 order by store_profit desc;
 
 -- 2
-select sum(sf.amount_sold) as sold_units, pd.product_name
+select sum(sf.amount_sold) sold_units, pd.product_name
 from sales_fact sf
 inner join product_dim pd on sf.product_key=pd.product_key
-group by pd.sku, sold_units
+group by pd.product_name
 order by sold_units;
 
 
@@ -428,7 +486,7 @@ from sales_fact sf
 inner join product_dim pd on sf.product_key=pd.product_key
 inner join date_dim dd on sf.date_key=dd.date_key
 where dd.quartal = 1
-group by pd.sku
+group by pd.product_name
 order by profit
 
 -- 4
@@ -454,8 +512,7 @@ where (dd.calendar_year = 2018) and
 (td.hour=2) and 
 (dd.day_name='Sunday') and 
 (sf.store_key=1) and 
-(sf.brand_name='apple')
-group by ; 
+(sf.brand_name='apple');
 
 -- 7
 select cd.cashier_forename cashier, sum(sf.amount_sold)
