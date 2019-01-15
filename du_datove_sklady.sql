@@ -458,10 +458,6 @@ insert into points_fact(customer_key, date_key, used_points, gained_points)
 values(3, date '2019-01-11', 60, 100);
 
 
-select * from sales_fact;
-
-
-
 
 -- Selects
 -- 1.
@@ -540,14 +536,18 @@ from sales_fact sf
 inner join customers_dim cd on sf.customer_key=cd.customer_key
 where cd.currency='EUR' and dd.calendar_year='2019';
 
--- 11 drill
-
 
 --12
-
 select sum(pf.payed_price) total_payed_price, pmd.method
 from payment_fact pf
 inner join payment_method_dim pmd on pf.payment_method_key=pmd.payment_method_key
+inner join date_key dk on pf.date_key=dk.date_key
+where dk.calendar_year=2019
 group by pmd.method
 
---13
+--14
+select cd.customer_surname, sum(pf.gained_points) gained_points 
+from points_fact pf
+inner join customers_dim cd on pf.customer_key=cd.customer_key
+group by cd.customer_surname
+order by gained_points;
